@@ -1,4 +1,4 @@
-%% job_SHE.m
+%% job_k20038514.m
 %   This function describes an Osprey job defined in a MATLAB script.
 %
 %   A valid Osprey job contains four distinct classes of items:
@@ -261,7 +261,7 @@ opts.fit.FWHMcoMM3              = 14;
 % Specify metabolite data
 % (MANDATORY)
 files     = {
-    '/Users/stellahadfield/Library/CloudStorage/OneDrive-King''sCollegeLondon/PSILAUT/PSILAUT_MRS_raw_data/103/PSM103_V1.7'
+    '/Users/Library/CloudStorage/OneDrive-King''sCollegeLondon/PSILAUT/PSILAUT_MRS_raw_data/103/PSM103_V1.7'
    };
 
 
@@ -293,7 +293,7 @@ files     = {
 % Specify T1-weighted structural imaging data
 % (OPTIONAL)
 % Link to single NIfTI (*.nii.gz or #.nii) files for GE, Siemens and Philips data
-files_nii  = { '/Users/stellahadfield/Library/CloudStorage/OneDrive-King''sCollegeLondon/PSILAUT/PSILAUT_MRS_raw_data/nifti/sub-psm103v1_T1w.nii.gz'}
+files_nii  = { '/Users/Library/CloudStorage/OneDrive-King''sCollegeLondon/PSILAUT/PSILAUT_MRS_raw_data/nifti/sub-psm103v1_T1w.nii.gz'}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% 4. SPECIFY STAT FILE %%%
@@ -312,5 +312,5 @@ file_stat = '';
 
 % Specify output folder (you can always use the direct path)
 % (MANDATORY)
-outputFolder = '/Users/stellahadfield/Library/CloudStorage/OneDrive-King''sCollegeLondon/PSILAUT/PSILAUT_MRS_raw_data/Results';
+outputFolder = '/Users/Library/CloudStorage/OneDrive-King''sCollegeLondon/PSILAUT/PSILAUT_MRS_raw_data/Results';
 

@@ -5,6 +5,9 @@
 # install.packages('emmeans') # For post-hoc
 # install.packages('multcompView') # For post-hoc
 
+# This code is all my own, however, I would like to acknoweldge Andrew Meso for providing me with great resources on linear mixed models
+# ... and the linear mixed model tutorials by Bodo Winter which aided my understanding of some concepts (https://bodowinter.com/tutorial/bw_LME_tutorial1.pdf)
+
 # Loading required packages
 library(tidyverse)
 library(ggpubr)

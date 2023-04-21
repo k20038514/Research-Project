@@ -1,60 +1,62 @@
 # install.packages('ggridges')
 # install.packages('patchwork')
 
+# NOTE: The code for raincloud plots has been adapted from Cedric Scherer (https://www.cedricscherer.com/2021/06/06/visualizing-distributions-with-raincloud-plots-and-how-to-create-them-with-ggplot2/)
+# ... Also big thanks to Alice Thomson (InPuts lab) who shared her raincloud code with me too!
+
+# Load relevant libraries 
 library(ggplot2)
 library(ggridges)
 library(patchwork)
 
-
 # Import raw data 
 MRS_fulldat = rio::import('GABAGlx_Conc.xlsx') # Import Excel file containing all data
-MRS_low = rio::import('0-2conc.xlsx')
-MRS_high = rio::import('0-5conc.xlsx')
+MRS_low = rio::import('0-2conc.xlsx') # Import the dataset which contains GABA/Glx data from 0-2mg of psilocybin
+MRS_high = rio::import('0-5conc.xlsx') # Import the dataset which contains GABA/Glx data from 0-5mg of psilocybin
 
 # Clean dataset
-MRS_dat = dplyr::select(MRS_fulldat, -c(GABA, Notes, SNR,	Cr_FWHM,	water_FWHM,	residual_water_ampl,	freqShift,	relRessum,	relResdiff1,	relResdiff2)) # Removing quality metric data, GABA data, notes and AQ as they will not be used in the subsequent analyses
-str(MRS_dat) # Check the data type of each object in the dataset
+MRS_dat = dplyr::select(MRS_fulldat, -c(GABA, Notes, SNR,	Cr_FWHM,	water_FWHM,	residual_water_ampl,	freqShift,	relRessum,	relResdiff1,	relResdiff2)) # Removing quality metric data, notes and GABA data as they will not be used here
+# ...note, I am removing GABA not GABAplus
+str(MRS_dat) # Check the data type of each object in the dataset, so can change if needed (see lines 20-24)
 which(is.na(MRS_dat)==T) # Identifies NA values
 
 MRS_dat$Dose = factor(MRS_dat$Dose, levels = c(0, 2, 5)) # Treating Dose as a factor so r treats it as a categorical variable
-MRS_dat$Group = factor(MRS_dat$Group, levels = c(0, 1)) # Treating Group as a factor so r treats it as a categorical variable
+MRS_dat$Group = factor(MRS_dat$Group, levels = c(0, 1)) # ...again
 
 MRS_low$Dose = factor(MRS_low$Dose, levels = c(0, 2)) # Treating Dose as a factor so r treats it as a categorical variable
-MRS_high$Dose = factor(MRS_high$Dose, levels = c(0, 5)) # Treating Dose as a factor so r treats it as a categorical variable
+MRS_high$Dose = factor(MRS_high$Dose, levels = c(0, 5)) # ...again
 
-# For the low condition with GABAplus:
+# Plotting a raincloud plot to display data from the low condition with GABAplus
 raincloud_low_GABA = ggplot(MRS_low, aes(x = Dose, y = GABAplus, color = factor(Dose))) +
   scale_x_discrete(breaks = c(0, 2)) + # Note: this needs to be scale_x_continous if using a continous variable!
-  ## add half-violin from {ggdist} package
+  ## Add half-violin from {ggdist} package
   ggdist::stat_halfeye(
-    ## custom bandwidth
+    ## Custom bandwidth
     adjust = .5, 
-    ## adjust height
+    ## Adjust height
     width = .6, 
-    ## move geom to the right
+    ## Move geom to the right
     justification = -.2, 
-    ## remove slab interval
+    ## Remove slab interval
     .width = 0, 
     point_colour = NA,
     aes(fill = factor(Dose))
   ) + 
   geom_boxplot(
     width = .12, 
-    ## remove outliers
+    ## Remove outliers
     outlier.color = NA ## `outlier.shape = NA` works as well
   ) +
   xlab("Dose (mg)") +
   ylab("GABA+") +
   ylim(0, 4.5) # Add this line to set the y-limit to 4.5
 
-# Spaghetti plot for the low dose with GABAplus
-
-# create the spaghetti plot
-spaghetti_low_GABA = ggplot(MRS_low, aes(x = Dose, y = GABAplus, group = ID, color = factor(ID))) +
-  geom_line() +
+# Plotting a spaghetti plot to display the participant trajectories of GABAplus between placebo and low dose 
+spaghetti_low_GABA = ggplot(MRS_low, aes(x = Dose, y = GABAplus, group = ID, color = factor(ID))) +  # Grouping participants by their ID number
+  geom_line() + # We want to see lines and points 
   geom_point() +
   labs(x = "Dose (mg)", y = "GABA+", color = "Participant ID") + 
-  ylim(0, 4.5)
+  ylim(0, 4.5) # Setting y limit between 0 and 4.5 as no GABA+ values exceed these limits (it just looks neater)
 
 # Combine the two plots
 combined_low_GABA = raincloud_low_GABA + spaghetti_low_GABA
@@ -64,38 +66,37 @@ combined_low_GABA
 
 #########
 
-# For the high condition with GABAplus:
+# Plotting a second raincloud plot to display data from the high condition with GABAplus
 raincloud_high_GABA = ggplot(MRS_high, aes(x = Dose, y = GABAplus, color = factor(Dose))) +
   scale_x_discrete(breaks = c(0, 5)) + # Note: this needs to be scale_x_continous if using a continous variable!
-  ## add half-violin from {ggdist} package
+  # Add half-violin from {ggdist} package
   ggdist::stat_halfeye(
-    ## custom bandwidth
+    # Custom bandwidth
     adjust = .5, 
-    ## adjust height
+    # Adjust height
     width = .6, 
-    ## move geom to the right
+    # Move geom to the right
     justification = -.2, 
-    ## remove slab interval
+    # Remove slab interval
     .width = 0, 
     point_colour = NA,
     aes(fill = factor(Dose))
   ) + 
   geom_boxplot(
     width = .12, 
-    ## remove outliers
-    outlier.color = NA ## `outlier.shape = NA` works as well
+    # Remove outliers
+    outlier.color = NA # `outlier.shape = NA` works as well
   ) +
   xlab("Dose (mg)") +
   ylab("GABA+") +
   ylim(0, 4.5) # Add this line to set the y-limit to 4.5
 
-# Spaghetti plot for the high dose with GABAplus:
-# create the spaghetti plot
-spaghetti_high_GABA = ggplot(MRS_high, aes(x = Dose, y = GABAplus, group = ID, color = factor(ID))) +
-  geom_line() +
+# Plotting a second spaghetti plot to display the participant trajectories of GABAplus between placebo and high dose 
+spaghetti_high_GABA = ggplot(MRS_high, aes(x = Dose, y = GABAplus, group = ID, color = factor(ID))) +  # Grouping participants by their ID number
+  geom_line() + # We want to add lines and points 
   geom_point() +
   labs(x = "Dose (mg)", y = "GABA+", color = "Participant ID") + 
-  ylim(0, 4.5)
+  ylim(0, 4.5) # Setting y limit between 0 and 4.5 as no GABA+ values exceed these limits 
 
 # Combine the two plots
 combined_high_GABA = raincloud_high_GABA + spaghetti_high_GABA
@@ -105,39 +106,37 @@ combined_high_GABA
 
 #########
 
-# For the low condition with Glx:
+# Plotting a third raincloud plot to display data from the low condition with Glx
 raincloud_low_Glx = ggplot(MRS_low, aes(x = Dose, y = Glx, color = factor(Dose))) +
   scale_x_discrete(breaks = c(0, 2)) + # Note: this needs to be scale_x_continous if using a continous variable!
-  ## add half-violin from {ggdist} package
+  # Add half-violin from {ggdist} package
   ggdist::stat_halfeye(
-    ## custom bandwidth
+    # Custom bandwidth
     adjust = .5, 
-    ## adjust height
+    # Adjust height
     width = .6, 
-    ## move geom to the right
+    # Move geom to the right
     justification = -.2, 
-    ## remove slab interval
+    # Remove slab interval
     .width = 0, 
     point_colour = NA,
     aes(fill = factor(Dose))
   ) + 
   geom_boxplot(
     width = .12, 
-    ## remove outliers
-    outlier.color = NA ## `outlier.shape = NA` works as well
+    # Remove outliers
+    outlier.color = NA # `outlier.shape = NA` works as well
   ) +
   xlab("Dose (mg)") +
   ylab("Glx") +
   ylim(6, 12) # Add this line to set the y-limit to 4.5
 
-# Spaghetti plot for the low dose with GABAplus
-
-# create the spaghetti plot
-spaghetti_low_Glx = ggplot(MRS_low, aes(x = Dose, y = Glx, group = ID, color = factor(ID))) +
-  geom_line() +
-  geom_point() +
+# Plotting a third spaghetti plot to display the participant trajectories of Glx between placebo and low dose
+spaghetti_low_Glx = ggplot(MRS_low, aes(x = Dose, y = Glx, group = ID, color = factor(ID))) +  # Grouping participants by their ID number
+  geom_line() + # We want to add lines and points 
+  geom_point() + 
   labs(x = "Dose (mg)", y = "Glx", color = "Participant ID") + 
-  ylim(6, 12)
+  ylim(6, 12) # Setting y limit between 6 and 12 as no Glx values exceed these limits
 
 # Combine the two plots
 combined_low_Glx = raincloud_low_Glx + spaghetti_low_Glx
@@ -147,47 +146,41 @@ combined_low_Glx
 
 #########
 
-# For the high condition with Glx:
+# Plotting the final raincloud plot to display data from the high condition with Glx
 raincloud_high_Glx = ggplot(MRS_high, aes(x = Dose, y = Glx, color = factor(Dose))) +
   scale_x_discrete(breaks = c(0, 5)) + # Note: this needs to be scale_x_continous if using a continous variable!
-  ## add half-violin from {ggdist} package
+  # Add half-violin from {ggdist} package
   ggdist::stat_halfeye(
-    ## custom bandwidth
+    # Custom bandwidth
     adjust = .5, 
-    ## adjust height
+    # Adjust height
     width = .6, 
-    ## move geom to the right
+    # Move geom to the right
     justification = -.2, 
-    ## remove slab interval
+    # Remove slab interval
     .width = 0, 
     point_colour = NA,
     aes(fill = factor(Dose))
   ) + 
   geom_boxplot(
     width = .12, 
-    ## remove outliers
-    outlier.color = NA ## `outlier.shape = NA` works as well
+    # Remove outliers
+    outlier.color = NA # `outlier.shape = NA` works as well
   ) +
   xlab("Dose (mg)") +
   ylab("Glx") +
   ylim(6, 12) # Add this line to set the y-limit to 4.5
 
-# Spaghetti plot for the low dose with GABAplus
-
-# create the spaghetti plot
-spaghetti_high_Glx = ggplot(MRS_high, aes(x = Dose, y = Glx, group = ID, color = factor(ID))) +
-  geom_line() +
+# Plotting a final spaghetti plot to display the participant trajectories of Glx between placebo and high dose
+spaghetti_high_Glx = ggplot(MRS_high, aes(x = Dose, y = Glx, group = ID, color = factor(ID))) +  # Grouping participants by their ID number
+  geom_line() + # We want to add lines and points 
   geom_point() +
   labs(x = "Dose (mg)", y = "Glx", color = "Participant ID") + 
-  ylim(6, 12)
+  ylim(6, 12) # Setting y limit between 6 and 12 as no Glx values exceed these limits
 
 # Combine the two plots
 combined_high_Glx = raincloud_high_Glx + spaghetti_high_Glx
 
 # Display the combined plot
 combined_high_Glx
-######
-# Get rid of NA column
-# Send methods and results to Grainne
-
 

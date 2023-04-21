@@ -1,30 +1,21 @@
-# STEP 1: Installing and loading required packages
-# install.packages('tidyverse')
+# Installing required packages
+# install.packages('tidyverse') # Dataframes and such
 # install.packages('ggpubr') # Pearson's correlation
 # install.packages('lme4') # Mixed model equivalent to the linear model package (lm)
-# install.packages('ggdist') # For raincloud plots... and below:
-# install.packages('lavaan')
-# install.packages('plyr')
-# install.packages('cowplot')
-# install.packages('caTools') 
-# install.packages('bitops')
-# install.packages('readr')
-# install.packages('gghalves')
 # install.packages('emmeans') # For post-hoc
 # install.packages('multcompView') # For post-hoc
 
+# Loading required packages
 library(tidyverse)
+library(ggpubr)
+library(lme4)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(ggpubr)
-library(lme4)
-library(ggdist)
-library(gghalves)
 library(emmeans)
 library(multcompView)
 
-# Import raw data 
+# Import the raw data received from MRS processing
 MRS_fulldat = rio::import('GABAGlx_Conc.xlsx') # Import Excel file containing all data
 
 # Create separate dataset for values at 0, 2 and 5mg doses (for QM averaging below)
@@ -38,7 +29,7 @@ high_dat = dplyr::select(MRS_fulldat, c(Dose, GABAplus, Glx, SNR,	Cr_FWHM,	water
 high_dat = subset(high_dat, Dose == "5")
 
 # Work out the median GABAplus and Glx levels for each dose 
-median_pla_GABA = median(pla_dat$GABAplus, na.rm = TRUE)
+median_pla_GABA = median(pla_dat$GABAplus, na.rm = TRUE) # na.rm = TRUE tells R to ignore NA values 
 median_low_GABA = median(low_dat$GABAplus, na.rm = TRUE)
 median_high_GABA = median(high_dat$GABAplus, na.rm = TRUE)
 
@@ -97,9 +88,12 @@ FR_pla_sd = sd(pla_dat$relResdiff1, na.rm = TRUE)
 FR_low_sd = sd(low_dat$relResdiff1, na.rm = TRUE)
 FR_high_sd = sd(high_dat$relResdiff1, na.rm = TRUE) 
 
-# Clean dataset
-MRS_dat = dplyr::select(MRS_fulldat, -c(GABA, Notes, SNR,	Cr_FWHM,	water_FWHM,	residual_water_ampl,	freqShift,	relRessum,	relResdiff1,	relResdiff2)) # Removing quality metric data, GABA data, notes and AQ as they will not be used in the subsequent analyses
-str(MRS_dat) # Check the data type of each object in the dataset
+######
+
+# Clean-up my dataset
+MRS_dat = dplyr::select(MRS_fulldat, -c(GABA, Notes, SNR,	Cr_FWHM,	water_FWHM,	residual_water_ampl,	freqShift,	relRessum,	relResdiff1,	relResdiff2)) # Removing quality metric data, notes and GABA data as they will not be used in subsequent analyses
+# Note... removing GABA since I am only interested in GABA+
+str(MRS_dat) # Check the data type of each object in the dataset, so can change type if needed (see lines 96-97)
 which(is.na(MRS_dat)==T) # Identifies NA values, which is important to know, but these will not be a problem in mixed model analysis
 
 MRS_dat$Dose = factor(MRS_dat$Dose, levels = c(0, 2, 5)) # Treating Dose as a factor so r treats it as a categorical variable
@@ -107,13 +101,16 @@ MRS_dat$ID = as.numeric(MRS_dat$ID) # Change the data in the ID column to numeri
 
 # Looking at the relationship between GABA levels and psilocybin dose through a box plot
 GABAbox = boxplot(GABAplus ~ Dose, col=c("white", "lightgray"), MRS_dat)
+
 # Look at medians to see how levels change across conditions:
 # You can do this by puttting 'GABAbox' into the command window, and looking at the [3,] row which shows the median values of each condition
 
 # ...and the same for Glx
 Glxbox = boxplot(Glx ~ Dose, col=c("white", "lightgray"), MRS_dat)
 
-# Running the linear mixed model for GABA
+######
+
+# Running the linear mixed model for GABA+
 GABA.model = lmer(GABAplus ~ Dose + Group + (1|ID), data = MRS_dat)
 # Significant: means that adding dose to the model improves the fit of the data
 # -> Dose or group DOES impact GABA+ levels
@@ -123,15 +120,11 @@ GABA.null = lmer(GABAplus ~ Group + (1|ID), data = MRS_dat)
 
 # Compare models using Chi square
 GABA.anova = anova(GABA.model, GABA.null, test = "Chisq")
-# Significant -> the inclusion of dose as a predictor in the GABA model significantly improves the fit compared to the null
-# This means that dose is an important predictor of GABAplus levels
+# Not significant -> the inclusion of dose as a predictor in the GABA model does not significantly improves the fit, compared to the null
+# This means that dose is not an important predictor of GABA+ levels
 
-# Post-hoc to assess directionality of variables
-GABA_Ph = emmeans(GABA.model, list(pairwise ~ Dose), adjust = "tukey")
-# emmeans calculates the predicted mean values of GABAplus for each level of dose, after accounting for random effect of ID
-
-# Results suggest that there is a trend towards lower GABAplus levels at 2 mg compared to 0 mg, and a trend towards higher GABAplus levels at 5 mg compared to 0 mg, but neither of these are statistically significant
-# However, there is a significant difference in mean GABAplus levels between 2 mg and 5 mg, with higher levels at 5 mg compared to 2 mg
+# Post-hoc to assess directionality of variables -> This is NOT needed here, since GABA.anova is not significant, but is needed otherwise
+GABA_Ph = emmeans(GABA.model, list(pairwise ~ Dose), adjust = "tukey") # emmeans calculates the predicted mean values of GABAplus for each level of dose, after accounting for random effect of ID
 
 # Running the linear mixed model for Glx
 Glx.model = lmer(Glx ~ Dose + Group + (1|ID), data = MRS_dat)
@@ -141,38 +134,46 @@ Glx.null = lmer(Glx ~ Group + (1|ID), data = MRS_dat)
 
 # Compare models using Chi square 
 Glx.anova = anova(Glx.model, Glx.null, test = "Chisq")
+# Not significant -> the inclusion of dose as a predictor in the Glx model does not significantly improves the fit, compared to the null
+# This means that dose is not an important predictor of Glx levels
 
-# Post-hoc to assess directionality of variables
+# Post-hoc to assess directionality of variables -> Again not needed here, but may be useful if results are significant
 Glx_Ph = emmeans(Glx.model, list(pairwise ~ Dose), adjust = "tukey")
-print(Glx_Ph)
 
-# Results suggest that mean Glx levels for 5 mg is lower than 0 mg, and the mean Glx level for 5 mg is lower than 2 mg
+###### 
 
-# Assumption testing for GABA
-# 1) Normality of residuals: the differences between predicted and real values should be normally distributed 
-hist(residuals(GABA.model))
+# Assumption testing for GABA+
+# 1) Normality of residuals: the differences between predicted and real values should be normally distributed
+shapiro.test(residuals(GABA.model))
+# Not significant, this is good! Does not violate
+
+# 2) Homoscedasticity: all its random variables have the same finite variance
+hist(residuals(GABA.model)) # Generating residual plots to get a really good look at data, can notive deviations from homoscedasitcity here
 qqnorm(residuals(GABA.model))
 qqline(residuals(GABA.model))
 plot(GABA.model)
-shapiro.test(residuals(GABA.model))
+# qqplot is a little off but not enough to violate this assumption
 
 # Assumption testing for Glx
 # 1) Normality of residuals: the differences between predicted and real values should be norally distributed 
-hist(residuals(Glx.model))
-qqnorm(residuals(Glx.model))
+shapiro.test(residuals(Glx.model))
+# Not significant, this is good! Does not violate
+
+# 2) Homoscedasticity: all its random variables have the same finite variance
+hist(residuals(Glx.model)) # Generating residual plots to get a really good look at data, can notive deviations from homoscedasitcity here
+qqnorm(residuals(Glx.model)) 
 qqline(residuals(Glx.model))
 plot(Glx.model)
-shapiro.test(residuals(Glx.model))
+# Again, qqplot is a little off but not enough to violate this assumption
 
-# Pearson correlation for GABA at 2mg
-# Import 2mg dataset
-two_mg_dat = rio::import('2mg_dat.xlsx')
-GABA_cor_2mg = cor.test(two_mg_dat$GABAplus, two_mg_dat$AQ,  method = "pearson", use = "complete.obs") # Computes pearson correlation for GABA+ and AQ, 'complete.obs' removes missing values so you don't have to manually
+######
+
+# Pearson's correlation between GABA+ and Glx at 2mg and AQ
+two_mg_dat = rio::import('2mg_dat.xlsx') # # Import dataset containing all GABA+ and Glx values at 2mg of psilocybin
+GABA_cor_2mg = cor.test(two_mg_dat$GABAplus, two_mg_dat$AQ,  method = "pearson", use = "complete.obs") # 'complete.obs' removes missing values so you don't have to manually
 Glx_cor_2mg = cor.test(two_mg_dat$Glx, two_mg_dat$AQ,  method = "pearson", use = "complete.obs") 
 
-# Import 5mg dataset
-five_mg_dat = rio::import('5mg_dat.xlsx')
+# Pearson's correlation between GABA+ and Glx at 5mg and AQ
+five_mg_dat = rio::import('5mg_dat.xlsx') # Import dataset containing all GABA+ and Glx values at 5mg of psilocybin
 GABA_cor_5mg = cor.test(five_mg_dat$GABAplus, five_mg_dat$AQ, method = "pearson", use = "complete.obs")
 Glx_cor_5mg = cor.test(five_mg_dat$Glx, five_mg_dat$AQ, method = "pearson", use = "complete.obs")
-
-

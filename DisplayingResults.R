@@ -2,7 +2,7 @@
 # install.packages('patchwork')
 
 # NOTE: The code for raincloud plots has been adapted from Cedric Scherer (https://www.cedricscherer.com/2021/06/06/visualizing-distributions-with-raincloud-plots-and-how-to-create-them-with-ggplot2/)
-# ... Also big thanks to Alice Thomson (InPuts lab) who shared her raincloud code with me too!
+# ... Also big thanks to Alice Thomson (InPuts lab, KCL) who shared her raincloud code with me too!
 
 # Load relevant libraries 
 library(ggplot2)

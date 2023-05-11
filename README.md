@@ -1,6 +1,6 @@
 # Research-Project
 
-Hello! Welcome to my GitHub page, which is a repository for all code used in my Bachelor's thesis, which includes my Osprey JobFile, and R Studio Scripts for analysis and data plotting. All code will be appropriately acknoweledged where necessary.
+Hello! Welcome to my Research-Project, which is a repository for all code used in my Bachelor's thesis, which includes my Osprey JobFile, and R Studio Scripts for analysis and data plotting. All code will be appropriately acknoweledged where necessary.
 
 On this page, you will find three additional files: 
 1) job_k20038514.m -> The job file which tells Osprey where to find my raw data, how to process it, and where to store the results
